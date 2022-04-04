@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { projectAuth, projectStorage } from '../firebase/confiq.js'
+import { projectAuth, projectStorage, projectFirestore } from '../firebase/confiq.js'
 import { useAuthContext } from './useAuthContext'
 
 export const useSignup = () => {
@@ -26,6 +26,13 @@ export const useSignup = () => {
 
       // add display name and thumbnail to user profile 
       await res.user.updateProfile({ displayName, photoURL: imgUrl })
+
+      // create a user document
+      await projectFirestore.collection('users').doc(res.user.uid).set({
+        online: true,
+        displayName,
+        photoURL: imgUrl
+      })
 
       // dispatch login action
       dispatch({ type: 'LOGIN', payload: res.user })

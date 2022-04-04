@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react"
-import { projectFirestore } from "../firebase/config"
+import { projectFirestore } from "../firebase/confiq"
 
 export const useCollection = (collection, _query, _orderBy) => {
   const [documents, setDocuments] = useState(null)
@@ -23,9 +23,9 @@ export const useCollection = (collection, _query, _orderBy) => {
     const unsubscribe = ref.onSnapshot(snapshot => {
       let results = []
       snapshot.docs.forEach(doc => {
-        results.push({...doc.data(), id: doc.id})
+        results.push({ ...doc.data(), id: doc.id })
       });
-      
+
       // update state
       setDocuments(results)
       setError(null)
