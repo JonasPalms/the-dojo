@@ -2,13 +2,20 @@
 import './Create.css';
 import { useEffect, useState } from 'react';
 import Select from 'react-select';
-import { useCollection } from '../../hooks/useCollection'
+import { useCollection } from '../../hooks/useCollection';
+import { useAuthContext } from '../../hooks/useAuthContext';
+import { useFirestore } from '../../hooks/useFirestore'
+import { timestamp } from '../../firebase/confiq'
+import { useNavigate } from 'react-router-dom';
 
 
 export default function Create() {
 
+  const { addDocument, response } = useFirestore('projects');
+  const navigate = useNavigate();
   const { documents } = useCollection('users');
   const [users, setUsers] = useState([]);
+  const { user } = useAuthContext();
 
   // form field values
   const [name, setName] = useState('')
@@ -16,7 +23,7 @@ export default function Create() {
   const [dueDate, setDueDate] = useState('')
   const [category, setCategory] = useState('')
   const [assignedUsers, setAssignedUsers] = useState([])
-
+  const [formError, setFormError] = useState(null)
 
   const categories = [
     { value: 'development', label: 'Development' },
@@ -25,12 +32,57 @@ export default function Create() {
     { value: 'marketing', label: 'Marketing' },
   ]
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    console.log(name, details, dueDate, category.value);
+    setFormError(null)
+
+    if (!category) {
+      setFormError('Please select a project category')
+      return;
+    }
+
+    if (assignedUsers.length < 1) {
+      setFormError('Please assign the project to at least one user')
+      return;
+    }
+
+    const createdBy = {
+      displayName: user.displayName,
+      photoURL: user.photoURL,
+      id: user.uid
+    }
+
+    const assignedUsersList = assignedUsers.map((u) => {
+      return {
+        displayName: u.value.displayName,
+        photoURL: u.value.photoURL,
+        id: u.value.id
+      }
+    })
+    const project = {
+      name,
+      details,
+      category: category.value,
+      dueDate: timestamp.fromDate(new Date(dueDate)),
+      comments: [],
+      createdBy,
+      assignedUsersList
+    }
+
+    console.log(project);
+
+
+    await addDocument(project)
+
+    if (!response.error) {
+      navigate('/')
+    } else {
+      setFormError('Something went wront! Try again')
+    }
+
   }
 
-  // create 
+  // set user options based on all users in the doucuments 
   useEffect(() => {
 
     if (documents) {
@@ -92,7 +144,9 @@ export default function Create() {
             isMulti
           />
         </label>
+
         <button className='btn'>Submit Project</button>
+        {formError && <p className='error'>{formError}</p>}
       </form>
     </div>
   )
